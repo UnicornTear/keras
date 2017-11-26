@@ -134,11 +134,13 @@ class Tokenizer(object):
     `0` is a reserved index that won't be assigned to any word.
     """
 
-    def __init__(self, num_words=None,
+    def __init__(self,
+                 num_words=None,
                  filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
                  lower=True,
                  split=' ',
                  char_level=False,
+                 reserve_zero=True,
                  **kwargs):
         # Legacy support
         if 'nb_words' in kwargs:
@@ -156,6 +158,7 @@ class Tokenizer(object):
         self.num_words = num_words
         self.document_count = 0
         self.char_level = char_level
+        self.reserve_zero = reserve_zero
 
     def fit_on_texts(self, texts):
         """Updates internal vocabulary based on a list of texts.
@@ -187,8 +190,13 @@ class Tokenizer(object):
         wcounts = list(self.word_counts.items())
         wcounts.sort(key=lambda x: x[1], reverse=True)
         sorted_voc = [wc[0] for wc in wcounts]
-        # note that index 0 is reserved, never assigned to an existing word
-        self.word_index = dict(list(zip(sorted_voc, list(range(1, len(sorted_voc) + 1)))))
+
+        if self.reserve_zero:
+            indices = list(range(1, len(sorted_voc) + 1))
+        else:
+            indices = list(range(len(sorted_voc)))
+
+        self.word_index = dict(list(zip(sorted_voc, indices)))
 
         self.index_docs = {}
         for w, c in list(self.word_docs.items()):
